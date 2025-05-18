@@ -141,11 +141,49 @@
         .checkbox-container input {
             margin-right: 10px;
         }
+        .github-section {
+            background-color: #f5f5f5;
+            border-color: #e1e4e8;
+        }
+        .github-btn {
+            background-color: #24292e;
+        }
+        .github-btn:hover {
+            background-color: #1a1f24;
+        }
+        .github-connected {
+            color: #28a745;
+            font-weight: 600;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Content Generator Tool</h1>
+        
+        <!-- GitHub Connection Section -->
+        <div class="section github-section">
+            <h2 class="section-title">Connect to GitHub</h2>
+            <div id="githubAuthSection">
+                <p>Connect your GitHub account to save articles directly to your repositories.</p>
+                <button id="connectGithubBtn" class="github-btn">Connect GitHub Account</button>
+            </div>
+            <div id="githubConnectedSection" class="hidden">
+                <p>Connected to GitHub as <span id="githubUsername"></span> <span class="github-connected">✓</span></p>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="autoCommit" checked>
+                    <label for="autoCommit">Auto-commit changes</label>
+                </div>
+                <div id="repoSettings" class="hidden">
+                    <input type="text" id="repoName" placeholder="Repository name">
+                    <input type="text" id="filePath" placeholder="File path (e.g., articles/my-article.html)">
+                    <input type="text" id="commitMessage" placeholder="Commit message">
+                </div>
+                <button id="saveToGithubBtn" class="github-btn hidden">Save to GitHub</button>
+                <button id="disconnectGithubBtn">Disconnect</button>
+            </div>
+        </div>
         
         <!-- URL Input Section -->
         <div class="section">
@@ -192,6 +230,7 @@
             <div class="action-buttons">
                 <button id="copyContentBtn">Copy Content</button>
                 <button id="downloadHtmlBtn">Download index.html</button>
+                <button id="saveToGithubBtn2" class="github-btn hidden">Save to GitHub</button>
             </div>
             <iframe id="htmlPreview"></iframe>
         </div>
@@ -216,12 +255,204 @@
         const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
         const htmlPreview = document.getElementById('htmlPreview');
         
+        // GitHub Elements
+        const connectGithubBtn = document.getElementById('connectGithubBtn');
+        const disconnectGithubBtn = document.getElementById('disconnectGithubBtn');
+        const githubAuthSection = document.getElementById('githubAuthSection');
+        const githubConnectedSection = document.getElementById('githubConnectedSection');
+        const githubUsername = document.getElementById('githubUsername');
+        const autoCommitCheckbox = document.getElementById('autoCommit');
+        const repoSettings = document.getElementById('repoSettings');
+        const repoNameInput = document.getElementById('repoName');
+        const filePathInput = document.getElementById('filePath');
+        const commitMessageInput = document.getElementById('commitMessage');
+        const saveToGithubBtn = document.getElementById('saveToGithubBtn');
+        const saveToGithubBtn2 = document.getElementById('saveToGithubBtn2');
+        
+        // GitHub State
+        let githubAccessToken = null;
+        let githubUser = null;
+        
         // Event Listeners
         generateTitlesBtn.addEventListener('click', generateTitles);
         generateArticleBtn.addEventListener('click', generateArticle);
         addAnchorToArticleBtn.addEventListener('click', addAnchorToArticle);
         copyContentBtn.addEventListener('click', copyContent);
         downloadHtmlBtn.addEventListener('click', downloadHtml);
+        connectGithubBtn.addEventListener('click', connectGithub);
+        disconnectGithubBtn.addEventListener('click', disconnectGithub);
+        autoCommitCheckbox.addEventListener('change', toggleRepoSettings);
+        saveToGithubBtn.addEventListener('click', saveToGithub);
+        saveToGithubBtn2.addEventListener('click', saveToGithub);
+        
+        // Check for existing GitHub connection on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedToken = localStorage.getItem('githubAccessToken');
+            const savedUser = localStorage.getItem('githubUser');
+            
+            if (savedToken && savedUser) {
+                githubAccessToken = savedToken;
+                githubUser = JSON.parse(savedUser);
+                updateGithubUI();
+            }
+        });
+        
+        // GitHub Functions
+        function connectGithub() {
+            // Redirect to GitHub OAuth
+            const clientId = 'YOUR_GITHUB_CLIENT_ID'; // Replace with your actual GitHub OAuth App Client ID
+            const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+            const scope = 'repo,user';
+            const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+            
+            // Open in new window for better UX
+            const width = 600, height = 600;
+            const left = (window.innerWidth - width) / 2;
+            const top = (window.innerHeight - height) / 2;
+            
+            const authWindow = window.open(
+                githubAuthUrl,
+                'githubAuth',
+                `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
+            );
+            
+            // Listen for message from the popup
+            window.addEventListener('message', function handleMessage(event) {
+                if (event.origin !== window.location.origin) return;
+                
+                if (event.data.type === 'github-auth-success') {
+                    githubAccessToken = event.data.token;
+                    githubUser = event.data.user;
+                    
+                    localStorage.setItem('githubAccessToken', githubAccessToken);
+                    localStorage.setItem('githubUser', JSON.stringify(githubUser));
+                    
+                    updateGithubUI();
+                    authWindow.close();
+                    window.removeEventListener('message', handleMessage);
+                }
+            });
+        }
+        
+        function disconnectGithub() {
+            githubAccessToken = null;
+            githubUser = null;
+            localStorage.removeItem('githubAccessToken');
+            localStorage.removeItem('githubUser');
+            
+            githubAuthSection.classList.remove('hidden');
+            githubConnectedSection.classList.add('hidden');
+            saveToGithubBtn.classList.add('hidden');
+            saveToGithubBtn2.classList.add('hidden');
+        }
+        
+        function updateGithubUI() {
+            githubAuthSection.classList.add('hidden');
+            githubConnectedSection.classList.remove('hidden');
+            githubUsername.textContent = githubUser.login;
+            
+            // Show save button if we have content
+            if (htmlPreview.srcdoc) {
+                saveToGithubBtn.classList.remove('hidden');
+                saveToGithubBtn2.classList.remove('hidden');
+            }
+        }
+        
+        function toggleRepoSettings() {
+            if (autoCommitCheckbox.checked) {
+                repoSettings.classList.remove('hidden');
+            } else {
+                repoSettings.classList.add('hidden');
+            }
+        }
+        
+        async function saveToGithub() {
+            if (!githubAccessToken) {
+                alert('Please connect your GitHub account first');
+                return;
+            }
+            
+            const content = htmlPreview.srcdoc;
+            if (!content) {
+                alert('No content to save');
+                return;
+            }
+            
+            const repo = repoNameInput.value.trim() || 'content-generator-articles';
+            const path = filePathInput.value.trim() || `articles/article-${Date.now()}.html`;
+            const message = commitMessageInput.value.trim() || 'Add new generated article';
+            
+            try {
+                saveToGithubBtn.disabled = true;
+                saveToGithubBtn.innerHTML = '<span class="loading"></span> Saving...';
+                saveToGithubBtn2.disabled = true;
+                saveToGithubBtn2.innerHTML = '<span class="loading"></span> Saving...';
+                
+                // Check if repo exists, create if not
+                let repoExists = true;
+                try {
+                    await fetch(`https://api.github.com/repos/${githubUser.login}/${repo}`, {
+                        headers: {
+                            'Authorization': `token ${githubAccessToken}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                } catch (error) {
+                    repoExists = false;
+                }
+                
+                if (!repoExists) {
+                    // Create new repository
+                    const createResponse = await fetch('https://api.github.com/user/repos', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${githubAccessToken}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: repo,
+                            description: 'Articles generated with Content Generator Tool',
+                            private: false,
+                            auto_init: true
+                        })
+                    });
+                    
+                    if (!createResponse.ok) {
+                        throw new Error('Failed to create repository');
+                    }
+                }
+                
+                // Create or update file
+                const putResponse = await fetch(`https://api.github.com/repos/${githubUser.login}/${repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${githubAccessToken}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        content: btoa(unescape(encodeURIComponent(content))),
+                        branch: 'main'
+                    })
+                });
+                
+                if (!putResponse.ok) {
+                    throw new Error('Failed to save file to GitHub');
+                }
+                
+                alert('Successfully saved to GitHub!');
+            } catch (error) {
+                console.error('Error saving to GitHub:', error);
+                alert('Failed to save to GitHub: ' + error.message);
+            } finally {
+                saveToGithubBtn.disabled = false;
+                saveToGithubBtn.innerHTML = 'Save to GitHub';
+                saveToGithubBtn2.disabled = false;
+                saveToGithubBtn2.innerHTML = 'Save to GitHub';
+            }
+        }
         
         // API Integration Points (to be implemented in your backend)
         async function callGenerateTitles(url) {
@@ -335,6 +566,12 @@
                 
                 articleOutputSection.classList.remove('hidden');
                 anchorControls.classList.remove('hidden');
+                
+                // Show GitHub save button if connected
+                if (githubAccessToken) {
+                    saveToGithubBtn.classList.remove('hidden');
+                    saveToGithubBtn2.classList.remove('hidden');
+                }
             } catch (error) {
                 console.error('Error generating article:', error);
                 alert('Failed to generate article. Please try again.');
