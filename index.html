@@ -3,40 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Content Generator Tool</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>AI Content Generator</title>
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f5f7fa;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
         }
         .container {
-            background-color: white;
-            padding: 30px;
+            background: white;
             border-radius: 8px;
+            padding: 25px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-            font-weight: 600;
-        }
-        .section {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-        }
-        .section-title {
-            margin-top: 0;
-            color: #3498db;
-            font-weight: 600;
+            margin-bottom: 20px;
         }
         textarea, input[type="text"] {
             width: 100%;
@@ -44,12 +30,11 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
-            margin-bottom: 10px;
-            font-family: 'Poppins', sans-serif;
+            margin-bottom: 15px;
+            font-family: inherit;
         }
         textarea {
             min-height: 150px;
-            resize: vertical;
         }
         button {
             background-color: #3498db;
@@ -59,664 +44,400 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            margin-right: 10px;
-            margin-bottom: 10px;
             transition: background-color 0.3s;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 500;
         }
         button:hover {
             background-color: #2980b9;
         }
-        .titles-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
         }
-        .title-btn {
-            background-color: #f1f1f1;
-            color: #333;
-            padding: 8px 15px;
-            border-radius: 20px;
+        .checkbox-group {
+            margin: 15px 0;
+        }
+        .checkbox-group label {
+            margin-right: 15px;
+        }
+        .result-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .title-item {
+            padding: 8px;
+            margin: 5px 0;
             cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Poppins', sans-serif;
-        }
-        .title-btn:hover {
-            background-color: #3498db;
-            color: white;
-        }
-        .anchor-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
-        .anchor-pair {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            background-color: #f9f9f9;
-            padding: 10px;
             border-radius: 4px;
         }
-        .output-section {
-            position: relative;
+        .title-item:hover {
+            background-color: #e8f4fc;
         }
-        .action-buttons {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
-        #htmlPreview {
-            width: 100%;
-            height: 400px;
-            border: 1px solid #ddd;
-            margin-top: 20px;
-            background-color: white;
-        }
-        .hidden {
-            display: none;
-        }
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .checkbox-container {
-            display: flex;
-            align-items: center;
+        .status {
+            font-style: italic;
+            color: #7f8c8d;
             margin: 10px 0;
         }
-        .checkbox-container input {
+        .success {
+            color: #27ae60;
+        }
+        .error {
+            color: #e74c3c;
+        }
+        .outline-section {
+            margin-bottom: 10px;
+        }
+        .outline-subsection {
+            margin-left: 20px;
+            color: #555;
+        }
+        .action-buttons {
+            margin-top: 20px;
+        }
+        .action-buttons button {
             margin-right: 10px;
+            background-color: #2ecc71;
         }
-        .github-section {
-            background-color: #f5f5f5;
-            border-color: #e1e4e8;
-        }
-        .github-btn {
-            background-color: #24292e;
-        }
-        .github-btn:hover {
-            background-color: #1a1f24;
-        }
-        .github-connected {
-            color: #28a745;
-            font-weight: 600;
-            margin-left: 10px;
+        .action-buttons button:hover {
+            background-color: #27ae60;
         }
     </style>
 </head>
 <body>
+    <h1>AI Content Generator</h1>
+    <p>Generate article titles and outlines using OpenAI API</p>
+
     <div class="container">
-        <h1>Content Generator Tool</h1>
+        <h2>1. OpenAI API Key Setup</h2>
+        <input type="text" id="apiKey" placeholder="Enter your OpenAI API key (sk-...)" />
+        <button id="testApiBtn">Test API Connection</button>
+        <p id="apiStatus" class="status">Status: Not connected</p>
+    </div>
+
+    <div class="container">
+        <h2>2. Title Generation</h2>
+        <p>Paste your source content below (minimum 200 words for best results):</p>
+        <textarea id="sourceContent" placeholder="Paste your content here..."></textarea>
         
-        <!-- GitHub Connection Section -->
-        <div class="section github-section">
-            <h2 class="section-title">Connect to GitHub</h2>
-            <div id="githubAuthSection">
-                <p>Connect your GitHub account to save articles directly to your repositories.</p>
-                <button id="connectGithubBtn" class="github-btn">Connect GitHub Account</button>
-            </div>
-            <div id="githubConnectedSection" class="hidden">
-                <p>Connected to GitHub as <span id="githubUsername"></span> <span class="github-connected">✓</span></p>
-                <div class="checkbox-container">
-                    <input type="checkbox" id="autoCommit" checked>
-                    <label for="autoCommit">Auto-commit changes</label>
-                </div>
-                <div id="repoSettings" class="hidden">
-                    <input type="text" id="repoName" placeholder="Repository name">
-                    <input type="text" id="filePath" placeholder="File path (e.g., articles/my-article.html)">
-                    <input type="text" id="commitMessage" placeholder="Commit message">
-                </div>
-                <button id="saveToGithubBtn" class="github-btn hidden">Save to GitHub</button>
-                <button id="disconnectGithubBtn">Disconnect</button>
-            </div>
-        </div>
-        
-        <!-- URL Input Section -->
-        <div class="section">
-            <h2 class="section-title">Step 1: Enter Website URL</h2>
-            <input type="text" id="websiteUrl" placeholder="Paste website URL here...">
-            <button id="generateTitlesBtn">Generate Informational Article Titles</button>
-            
-            <div id="titlesResult" class="hidden">
-                <h3>Generated Titles:</h3>
-                <div class="titles-container" id="titlesContainer"></div>
-            </div>
-        </div>
-        
-        <!-- Article Generation Section -->
-        <div class="section">
-            <h2 class="section-title">Step 2: Generate Article</h2>
-            <input type="text" id="articleTitle" placeholder="Paste or select a title from above">
-            <div class="checkbox-container">
-                <input type="checkbox" id="generateHeadings" checked>
-                <label for="generateHeadings">Generate headings based on title</label>
-            </div>
-            <button id="generateArticleBtn">Generate Detailed Article</button>
-        </div>
-        
-        <!-- Single Anchor Text Control -->
-        <div class="section hidden" id="anchorControls">
-            <h2 class="section-title">Step 3: Add Anchor Link</h2>
-            <div class="anchor-pair">
-                <input type="text" placeholder="Anchor Text" id="anchorText">
-                <input type="text" placeholder="Target URL" id="targetUrl">
-                <select id="anchorPosition">
-                    <option value="first">First Paragraph</option>
-                    <option value="second">Second Paragraph</option>
-                    <option value="third">Third Paragraph</option>
-                    <option value="last">Last Paragraph</option>
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" id="creativeTitles"> Generate more creative titles
+            </label>
+            <label>
+                Tone:
+                <select id="toneSelect">
+                    <option value="neutral">Neutral</option>
+                    <option value="technical">Technical</option>
+                    <option value="beginner">Beginner-Friendly</option>
+                    <option value="persuasive">Persuasive</option>
                 </select>
-            </div>
-            <button id="addAnchorToArticleBtn">Add to Article</button>
+            </label>
         </div>
         
-        <!-- Article Output Section -->
-        <div class="section output-section hidden" id="articleOutputSection">
-            <h2 class="section-title">Generated Article</h2>
-            <div class="action-buttons">
-                <button id="copyContentBtn">Copy Content</button>
-                <button id="downloadHtmlBtn">Download index.html</button>
-                <button id="saveToGithubBtn2" class="github-btn hidden">Save to GitHub</button>
-            </div>
-            <iframe id="htmlPreview"></iframe>
+        <button id="generateTitlesBtn" disabled>Generate Titles</button>
+        
+        <div class="result-box">
+            <h3>Generated Titles:</h3>
+            <div id="generatedTitles"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>3. Article Outline Generator</h2>
+        <input type="text" id="articleTitle" placeholder="Enter or select a title from above" />
+        
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" id="detailedPoints"> Detailed sub-points
+            </label>
+            <label>
+                <input type="checkbox" id="includeExamples"> Include examples/case studies
+            </label>
+            <label>
+                <input type="checkbox" id="includeFAQs"> Add FAQs section
+            </label>
+        </div>
+        
+        <button id="generateOutlineBtn" disabled>Generate Outline</button>
+        
+        <div class="result-box">
+            <h3>Article Outline:</h3>
+            <div id="articleOutline"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>4. Export Options</h2>
+        <div class="action-buttons">
+            <button id="copyOutlineBtn" disabled>Copy Outline to Clipboard</button>
+            <button id="downloadTxtBtn" disabled>Download as .TXT</button>
         </div>
     </div>
 
     <script>
         // DOM Elements
-        const websiteUrlInput = document.getElementById('websiteUrl');
+        const apiKeyInput = document.getElementById('apiKey');
+        const testApiBtn = document.getElementById('testApiBtn');
+        const apiStatus = document.getElementById('apiStatus');
+        const sourceContent = document.getElementById('sourceContent');
         const generateTitlesBtn = document.getElementById('generateTitlesBtn');
-        const titlesResult = document.getElementById('titlesResult');
-        const titlesContainer = document.getElementById('titlesContainer');
-        const articleTitleInput = document.getElementById('articleTitle');
-        const generateHeadingsCheckbox = document.getElementById('generateHeadings');
-        const generateArticleBtn = document.getElementById('generateArticleBtn');
-        const anchorControls = document.getElementById('anchorControls');
-        const anchorTextInput = document.getElementById('anchorText');
-        const targetUrlInput = document.getElementById('targetUrl');
-        const anchorPositionSelect = document.getElementById('anchorPosition');
-        const addAnchorToArticleBtn = document.getElementById('addAnchorToArticleBtn');
-        const articleOutputSection = document.getElementById('articleOutputSection');
-        const copyContentBtn = document.getElementById('copyContentBtn');
-        const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
-        const htmlPreview = document.getElementById('htmlPreview');
+        const generatedTitlesDiv = document.getElementById('generatedTitles');
+        const articleTitle = document.getElementById('articleTitle');
+        const generateOutlineBtn = document.getElementById('generateOutlineBtn');
+        const articleOutline = document.getElementById('articleOutline');
+        const copyOutlineBtn = document.getElementById('copyOutlineBtn');
+        const downloadTxtBtn = document.getElementById('downloadTxtBtn');
         
-        // GitHub Elements
-        const connectGithubBtn = document.getElementById('connectGithubBtn');
-        const disconnectGithubBtn = document.getElementById('disconnectGithubBtn');
-        const githubAuthSection = document.getElementById('githubAuthSection');
-        const githubConnectedSection = document.getElementById('githubConnectedSection');
-        const githubUsername = document.getElementById('githubUsername');
-        const autoCommitCheckbox = document.getElementById('autoCommit');
-        const repoSettings = document.getElementById('repoSettings');
-        const repoNameInput = document.getElementById('repoName');
-        const filePathInput = document.getElementById('filePath');
-        const commitMessageInput = document.getElementById('commitMessage');
-        const saveToGithubBtn = document.getElementById('saveToGithubBtn');
-        const saveToGithubBtn2 = document.getElementById('saveToGithubBtn2');
-        
-        // GitHub State
-        let githubAccessToken = null;
-        let githubUser = null;
+        // State
+        let apiKey = '';
+        let isApiConnected = false;
         
         // Event Listeners
+        testApiBtn.addEventListener('click', testApiConnection);
         generateTitlesBtn.addEventListener('click', generateTitles);
-        generateArticleBtn.addEventListener('click', generateArticle);
-        addAnchorToArticleBtn.addEventListener('click', addAnchorToArticle);
-        copyContentBtn.addEventListener('click', copyContent);
-        downloadHtmlBtn.addEventListener('click', downloadHtml);
-        connectGithubBtn.addEventListener('click', connectGithub);
-        disconnectGithubBtn.addEventListener('click', disconnectGithub);
-        autoCommitCheckbox.addEventListener('change', toggleRepoSettings);
-        saveToGithubBtn.addEventListener('click', saveToGithub);
-        saveToGithubBtn2.addEventListener('click', saveToGithub);
+        generateOutlineBtn.addEventListener('click', generateOutline);
+        copyOutlineBtn.addEventListener('click', copyOutlineToClipboard);
+        downloadTxtBtn.addEventListener('click', downloadOutlineAsTxt);
         
-        // Check for existing GitHub connection on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedToken = localStorage.getItem('githubAccessToken');
-            const savedUser = localStorage.getItem('githubUser');
-            
-            if (savedToken && savedUser) {
-                githubAccessToken = savedToken;
-                githubUser = JSON.parse(savedUser);
-                updateGithubUI();
-            }
-        });
-        
-        // GitHub Functions
-        function connectGithub() {
-            // Redirect to GitHub OAuth
-            const clientId = 'YOUR_GITHUB_CLIENT_ID'; // Replace with your actual GitHub OAuth App Client ID
-            const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-            const scope = 'repo,user';
-            const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
-            
-            // Open in new window for better UX
-            const width = 600, height = 600;
-            const left = (window.innerWidth - width) / 2;
-            const top = (window.innerHeight - height) / 2;
-            
-            const authWindow = window.open(
-                githubAuthUrl,
-                'githubAuth',
-                `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
-            );
-            
-            // Listen for message from the popup
-            window.addEventListener('message', function handleMessage(event) {
-                if (event.origin !== window.location.origin) return;
-                
-                if (event.data.type === 'github-auth-success') {
-                    githubAccessToken = event.data.token;
-                    githubUser = event.data.user;
-                    
-                    localStorage.setItem('githubAccessToken', githubAccessToken);
-                    localStorage.setItem('githubUser', JSON.stringify(githubUser));
-                    
-                    updateGithubUI();
-                    authWindow.close();
-                    window.removeEventListener('message', handleMessage);
-                }
-            });
-        }
-        
-        function disconnectGithub() {
-            githubAccessToken = null;
-            githubUser = null;
-            localStorage.removeItem('githubAccessToken');
-            localStorage.removeItem('githubUser');
-            
-            githubAuthSection.classList.remove('hidden');
-            githubConnectedSection.classList.add('hidden');
-            saveToGithubBtn.classList.add('hidden');
-            saveToGithubBtn2.classList.add('hidden');
-        }
-        
-        function updateGithubUI() {
-            githubAuthSection.classList.add('hidden');
-            githubConnectedSection.classList.remove('hidden');
-            githubUsername.textContent = githubUser.login;
-            
-            // Show save button if we have content
-            if (htmlPreview.srcdoc) {
-                saveToGithubBtn.classList.remove('hidden');
-                saveToGithubBtn2.classList.remove('hidden');
-            }
-        }
-        
-        function toggleRepoSettings() {
-            if (autoCommitCheckbox.checked) {
-                repoSettings.classList.remove('hidden');
-            } else {
-                repoSettings.classList.add('hidden');
-            }
-        }
-        
-        async function saveToGithub() {
-            if (!githubAccessToken) {
-                alert('Please connect your GitHub account first');
+        // API Connection Test
+        async function testApiConnection() {
+            apiKey = apiKeyInput.value.trim();
+            if (!apiKey) {
+                apiStatus.textContent = 'Status: Please enter an API key';
+                apiStatus.className = 'status error';
                 return;
             }
             
-            const content = htmlPreview.srcdoc;
-            if (!content) {
-                alert('No content to save');
-                return;
-            }
-            
-            const repo = repoNameInput.value.trim() || 'content-generator-articles';
-            const path = filePathInput.value.trim() || `articles/article-${Date.now()}.html`;
-            const message = commitMessageInput.value.trim() || 'Add new generated article';
+            apiStatus.textContent = 'Status: Testing connection...';
+            generateTitlesBtn.disabled = true;
             
             try {
-                saveToGithubBtn.disabled = true;
-                saveToGithubBtn.innerHTML = '<span class="loading"></span> Saving...';
-                saveToGithubBtn2.disabled = true;
-                saveToGithubBtn2.innerHTML = '<span class="loading"></span> Saving...';
-                
-                // Check if repo exists, create if not
-                let repoExists = true;
-                try {
-                    await fetch(`https://api.github.com/repos/${githubUser.login}/${repo}`, {
-                        headers: {
-                            'Authorization': `token ${githubAccessToken}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-                } catch (error) {
-                    repoExists = false;
-                }
-                
-                if (!repoExists) {
-                    // Create new repository
-                    const createResponse = await fetch('https://api.github.com/user/repos', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `token ${githubAccessToken}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            name: repo,
-                            description: 'Articles generated with Content Generator Tool',
-                            private: false,
-                            auto_init: true
-                        })
-                    });
-                    
-                    if (!createResponse.ok) {
-                        throw new Error('Failed to create repository');
-                    }
-                }
-                
-                // Create or update file
-                const putResponse = await fetch(`https://api.github.com/repos/${githubUser.login}/${repo}/contents/${path}`, {
-                    method: 'PUT',
+                const response = await fetch('https://api.openai.com/v1/models', {
                     headers: {
-                        'Authorization': `token ${githubAccessToken}`,
-                        'Accept': 'application/vnd.github.v3+json',
+                        'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        content: btoa(unescape(encodeURIComponent(content))),
-                        branch: 'main'
-                    })
+                    }
                 });
                 
-                if (!putResponse.ok) {
-                    throw new Error('Failed to save file to GitHub');
+                if (response.ok) {
+                    apiStatus.textContent = 'Status: Connected successfully';
+                    apiStatus.className = 'status success';
+                    isApiConnected = true;
+                    generateTitlesBtn.disabled = false;
+                } else {
+                    throw new Error('API connection failed');
                 }
-                
-                alert('Successfully saved to GitHub!');
             } catch (error) {
-                console.error('Error saving to GitHub:', error);
-                alert('Failed to save to GitHub: ' + error.message);
-            } finally {
-                saveToGithubBtn.disabled = false;
-                saveToGithubBtn.innerHTML = 'Save to GitHub';
-                saveToGithubBtn2.disabled = false;
-                saveToGithubBtn2.innerHTML = 'Save to GitHub';
+                apiStatus.textContent = 'Status: Connection failed - check your API key';
+                apiStatus.className = 'status error';
+                isApiConnected = false;
+                generateTitlesBtn.disabled = true;
             }
         }
         
-        // API Integration Points (to be implemented in your backend)
-        async function callGenerateTitles(url) {
-            // Replace with your actual API call
-            console.log("Calling title generation API for URL:", url);
-            
-            // Mock response - replace with actual API call
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    const mockTitles = [
-                        "10 Essential Tips for Improving Your Website's SEO Performance",
-                        "The Complete Guide to Creating Engaging Content for Your Audience",
-                        "How to Optimize Your Website for Faster Loading Speeds",
-                        "Understanding the Latest Google Algorithm Updates and Their Impact",
-                        "Mobile-First Design: Why It's Crucial for Your Online Success",
-                        "The Psychology Behind Effective Call-to-Action Buttons",
-                        "Building Trust Online: Strategies for Authentic Brand Representation",
-                        "Content Marketing Strategies That Actually Drive Conversions"
-                    ];
-                    resolve(mockTitles);
-                }, 1000);
-            });
-        }
-        
-        async function callGenerateArticle(title, generateHeadings) {
-            // Replace with your actual API call
-            console.log("Calling article generation API for title:", title, "with headings:", generateHeadings);
-            
-            // Mock response - replace with actual API call
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    let article = `# ${title}\n\n`;
-                    
-                    if (generateHeadings) {
-                        article += `## Introduction\n\nThis is a generated article about ${title}. The introduction paragraph would normally contain engaging content about the topic.\n\n`;
-                        
-                        // Generate 3-5 sections with headings based on title
-                        const sections = [
-                            "Key Benefits and Features",
-                            "Implementation Strategies",
-                            "Common Challenges and Solutions",
-                            "Expert Recommendations",
-                            "Future Trends"
-                        ].slice(0, 3 + Math.floor(Math.random() * 3));
-                        
-                        sections.forEach(section => {
-                            article += `## ${section}\n\nSeveral paragraphs would appear here with detailed information about ${title} related to ${section.toLowerCase()}.\n\n`;
-                        });
-                        
-                        article += `## Conclusion\n\nA summary of the key points about ${title} would appear here.`;
-                    } else {
-                        article += `This is a generated article about ${title}. The content would normally contain several paragraphs with detailed information about the topic, without specific section headings.`;
-                    }
-                    
-                    resolve(article);
-                }, 1500);
-            });
-        }
-        
-        // UI Functions
+        // Generate Titles
         async function generateTitles() {
-            if (!websiteUrlInput.value.trim()) {
-                alert('Please enter a website URL first');
+            if (!isApiConnected) {
+                alert('Please connect to the OpenAI API first');
                 return;
             }
+            
+            const content = sourceContent.value.trim();
+            if (content.split(/\s+/).length < 50) {
+                alert('Please provide more content (at least 50 words) for better results');
+                return;
+            }
+            
+            const isCreative = document.getElementById('creativeTitles').checked;
+            const tone = document.getElementById('toneSelect').value;
             
             generateTitlesBtn.disabled = true;
-            generateTitlesBtn.innerHTML = '<span class="loading"></span> Generating...';
+            generatedTitlesDiv.innerHTML = '<p>Generating titles... This may take a moment.</p>';
             
             try {
-                const titles = await callGenerateTitles(websiteUrlInput.value.trim());
+                const prompt = `Based on the following content, generate 8 detailed, engaging article titles. 
+                ${isCreative ? 'Be creative and attention-grabbing.' : 'Be clear and informative.'} 
+                ${tone !== 'neutral' ? `Use a ${tone} tone.` : ''}
                 
-                titlesContainer.innerHTML = '';
-                titles.forEach(title => {
-                    const titleBtn = document.createElement('div');
-                    titleBtn.className = 'title-btn';
-                    titleBtn.textContent = title;
-                    titleBtn.addEventListener('click', () => {
-                        articleTitleInput.value = title;
-                    });
-                    titlesContainer.appendChild(titleBtn);
-                });
+                Content:
+                ${content}
                 
-                titlesResult.classList.remove('hidden');
+                Please return the titles as a numbered list without additional commentary.`;
+                
+                const response = await callOpenAI(prompt);
+                displayGeneratedTitles(response);
             } catch (error) {
-                console.error('Error generating titles:', error);
-                alert('Failed to generate titles. Please try again.');
+                generatedTitlesDiv.innerHTML = `<p class="error">Error generating titles: ${error.message}</p>`;
+            } finally {
+                generateTitlesBtn.disabled = false;
             }
-            
-            generateTitlesBtn.disabled = false;
-            generateTitlesBtn.innerHTML = 'Generate Informational Article Titles';
         }
         
-        async function generateArticle() {
-            const title = articleTitleInput.value.trim();
+        // Display Generated Titles
+        function displayGeneratedTitles(text) {
+            // Clean up the response
+            let titles = text.split('\n')
+                .map(line => line.replace(/^\d+\.\s*/, '').trim())
+                .filter(line => line.length > 0);
+            
+            // Ensure we have at least 8 titles
+            if (titles.length < 8) {
+                // If we got fewer than 8, just split by any list-like format
+                titles = text.split(/(?:\d+\.|\n|\-)\s*/)
+                    .map(title => title.trim())
+                    .filter(title => title.length > 0);
+            }
+            
+            // Take the first 8 unique titles
+            const uniqueTitles = [...new Set(titles)].slice(0, 8);
+            
+            generatedTitlesDiv.innerHTML = '<h4>Click a title to use it for your outline:</h4>';
+            uniqueTitles.forEach((title, index) => {
+                const titleElement = document.createElement('div');
+                titleElement.className = 'title-item';
+                titleElement.textContent = `${index + 1}. ${title}`;
+                titleElement.addEventListener('click', () => {
+                    articleTitle.value = title;
+                    generateOutlineBtn.disabled = false;
+                });
+                generatedTitlesDiv.appendChild(titleElement);
+            });
+        }
+        
+        // Generate Outline
+        async function generateOutline() {
+            const title = articleTitle.value.trim();
             if (!title) {
                 alert('Please enter or select a title first');
                 return;
             }
             
-            generateArticleBtn.disabled = true;
-            generateArticleBtn.innerHTML = '<span class="loading"></span> Generating...';
+            const detailedPoints = document.getElementById('detailedPoints').checked;
+            const includeExamples = document.getElementById('includeExamples').checked;
+            const includeFAQs = document.getElementById('includeFAQs').checked;
+            
+            generateOutlineBtn.disabled = true;
+            articleOutline.innerHTML = '<p>Generating outline... This may take a moment.</p>';
             
             try {
-                const generateHeadings = generateHeadingsCheckbox.checked;
-                const article = await callGenerateArticle(title, generateHeadings);
+                let prompt = `Create a detailed article outline for the title: "${title}".\n\n`;
+                prompt += `Structure should include:\n`;
+                prompt += `- Introduction with hook and thesis\n`;
+                prompt += `- 3-5 main points with ${detailedPoints ? 'detailed sub-points' : 'key points'}\n`;
+                if (includeExamples) prompt += `- Include relevant examples or case studies\n`;
+                if (includeFAQs) prompt += `- Add an FAQ section at the end\n`;
+                prompt += `- Conclusion with summary and call-to-action\n\n`;
+                prompt += `Format the outline with clear headings (I., II., etc.) and bullet points for sub-sections.`;
                 
-                // Update preview directly
-                const htmlContent = generateHtmlContent(article);
-                htmlPreview.srcdoc = htmlContent;
+                const response = await callOpenAI(prompt);
+                displayArticleOutline(response);
                 
-                articleOutputSection.classList.remove('hidden');
-                anchorControls.classList.remove('hidden');
-                
-                // Show GitHub save button if connected
-                if (githubAccessToken) {
-                    saveToGithubBtn.classList.remove('hidden');
-                    saveToGithubBtn2.classList.remove('hidden');
-                }
+                // Enable export buttons
+                copyOutlineBtn.disabled = false;
+                downloadTxtBtn.disabled = false;
             } catch (error) {
-                console.error('Error generating article:', error);
-                alert('Failed to generate article. Please try again.');
+                articleOutline.innerHTML = `<p class="error">Error generating outline: ${error.message}</p>`;
+            } finally {
+                generateOutlineBtn.disabled = false;
             }
-            
-            generateArticleBtn.disabled = false;
-            generateArticleBtn.innerHTML = 'Generate Detailed Article';
         }
         
-        function addAnchorToArticle() {
-            const anchorText = anchorTextInput.value.trim();
-            const targetUrl = targetUrlInput.value.trim();
-            const position = anchorPositionSelect.value;
+        // Display Article Outline
+        function displayArticleOutline(text) {
+            // Format the outline with proper HTML structure
+            const formattedOutline = formatOutline(text);
+            articleOutline.innerHTML = formattedOutline;
+        }
+        
+        // Format Outline Text with HTML
+        function formatOutline(text) {
+            // Split into sections
+            const sections = text.split(/\n(?=[IVXLCDM]+\.)/);
             
-            if (!anchorText || !targetUrl) {
-                alert('Please enter both anchor text and target URL');
-                return;
-            }
+            let html = '';
             
-            let currentContent = htmlPreview.srcdoc;
-            const anchorTag = `<a href="${targetUrl}" target="_blank">${anchorText}</a>`;
-            
-            // Create a temporary div to parse the HTML
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = currentContent;
-            
-            // Find all paragraphs
-            const paragraphs = tempDiv.querySelectorAll('p');
-            let targetParagraph;
-            
-            switch (position) {
-                case 'first':
-                    targetParagraph = paragraphs[1]; // Skip the first paragraph which is usually the title
-                    break;
-                case 'second':
-                    targetParagraph = paragraphs[2];
-                    break;
-                case 'third':
-                    targetParagraph = paragraphs[3];
-                    break;
-                case 'last':
-                    targetParagraph = paragraphs[paragraphs.length - 2]; // Skip the very last one
-                    break;
-                default:
-                    targetParagraph = paragraphs[1];
-            }
-            
-            if (targetParagraph) {
-                // Insert anchor in the middle of the paragraph
-                const sentences = targetParagraph.innerHTML.split('. ');
-                if (sentences.length > 1) {
-                    const insertPos = Math.floor(sentences.length / 2);
-                    sentences.splice(insertPos, 0, anchorTag);
-                    targetParagraph.innerHTML = sentences.join('. ');
-                } else {
-                    targetParagraph.innerHTML += ` ${anchorTag}`;
+            sections.forEach(section => {
+                if (!section.trim()) return;
+                
+                // Split section header from content
+                const [header, ...contentParts] = section.split('\n');
+                const content = contentParts.join('\n');
+                
+                // Clean up header
+                const cleanHeader = header.replace(/^[IVXLCDM]+\.\s*/, '').trim();
+                
+                html += `<div class="outline-section"><strong>${header}</strong>`;
+                
+                if (cleanHeader) {
+                    // Split content into sub-points
+                    const points = content.split(/(?:\n\s*[A-Z]\.|\n\s*\-|\n\s*\*)/)
+                        .map(point => point.trim())
+                        .filter(point => point.length > 0);
+                    
+                    if (points.length > 0) {
+                        html += '<div class="outline-subsection"><ul>';
+                        points.forEach(point => {
+                            html += `<li>${point}</li>`;
+                        });
+                        html += '</ul></div>';
+                    }
                 }
-            }
+                
+                html += '</div>';
+            });
             
-            // Update the preview
-            htmlPreview.srcdoc = tempDiv.innerHTML;
-            alert('Anchor link has been added to the article!');
+            return html;
         }
         
-        function copyContent() {
-            const range = document.createRange();
-            range.selectNode(htmlPreview.contentDocument.body);
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(range);
-            document.execCommand('copy');
-            window.getSelection().removeAllRanges();
-            alert('Content copied to clipboard!');
+        // Copy Outline to Clipboard
+        async function copyOutlineToClipboard() {
+            const text = articleOutline.innerText;
+            try {
+                await navigator.clipboard.writeText(text);
+                alert('Outline copied to clipboard!');
+            } catch (error) {
+                alert('Failed to copy outline: ' + error.message);
+            }
         }
         
-        function downloadHtml() {
-            const htmlContent = htmlPreview.srcdoc;
-            const blob = new Blob([htmlContent], { type: 'text/html' });
+        // Download Outline as TXT
+        function downloadOutlineAsTxt() {
+            const text = articleTitle.value + '\n\n' + articleOutline.innerText;
+            const blob = new Blob([text], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'index.html';
+            a.download = 'article-outline.txt';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
         
-        function generateHtmlContent(markdownText) {
-            // Simple markdown to HTML conversion
-            let html = markdownText
-                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-                .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/\n/g, '<br>');
+        // Generic OpenAI API Call
+        async function callOpenAI(prompt) {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'gpt-3.5-turbo',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.7
+                })
+            });
             
-            // Wrap in proper HTML structure with Poppins font
-            return `<!DOCTYPE html>
-<html>
-<head>
-    <title>${articleTitleInput.value || 'Generated Article'}</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: white;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            font-weight: 600;
-        }
-        h2 {
-            color: #3498db;
-            margin-top: 30px;
-            font-weight: 600;
-        }
-        a {
-            color: #e74c3c;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        p {
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-    <article>
-        <p>${html}</p>
-    </article>
-</body>
-</html>`;
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'API request failed');
+            }
+            
+            const data = await response.json();
+            return data.choices[0]?.message?.content || '';
         }
     </script>
 </body>
