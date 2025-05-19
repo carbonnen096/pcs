@@ -24,7 +24,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
-        textarea, input[type="text"] {
+        textarea, input[type="text"], input[type="url"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -116,6 +116,12 @@
         .generate-btn:hover {
             background-color: #2980b9;
         }
+        .link-btn {
+            background-color: #e67e22;
+        }
+        .link-btn:hover {
+            background-color: #d35400;
+        }
         #articleContent {
             white-space: pre-wrap;
         }
@@ -125,11 +131,34 @@
             text-align: right;
             margin-top: 5px;
         }
+        .link-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .link-option {
+            flex: 1;
+            min-width: 200px;
+        }
+        .link-preview {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .link-preview a {
+            color: #2980b9;
+            text-decoration: none;
+        }
+        .link-preview a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <h1>AI Content Generator</h1>
-    <p>Generate complete articles from titles and outlines using OpenAI API</p>
+    <p>Generate complete articles with anchor links using OpenAI API</p>
 
     <div class="container">
         <h2>1. OpenAI API Key Setup</h2>
@@ -227,6 +256,56 @@
         </div>
     </div>
 
+    <div class="container">
+        <h2>5. Add Anchor Links</h2>
+        <div class="link-options">
+            <div class="link-option">
+                <label>Anchor Text:</label>
+                <input type="text" id="anchorText" placeholder="e.g. 'best SEO tools'">
+            </div>
+            <div class="link-option">
+                <label>Target URL:</label>
+                <input type="url" id="targetUrl" placeholder="https://example.com">
+            </div>
+        </div>
+        
+        <div class="checkbox-group">
+            <label>Insert link in:</label>
+            <label>
+                <input type="radio" name="linkPosition" value="first" checked> First paragraph
+            </label>
+            <label>
+                <input type="radio" name="linkPosition" value="second"> Second paragraph
+            </label>
+            <label>
+                <input type="radio" name="linkPosition" value="third"> Third paragraph
+            </label>
+            <label>
+                <input type="radio" name="linkPosition" value="last"> Last paragraph
+            </label>
+            <label>
+                <input type="radio" name="linkPosition" value="random"> Random paragraph
+            </label>
+        </div>
+        
+        <div class="link-preview" id="linkPreview">
+            Link preview will appear here
+        </div>
+        
+        <button id="addLinkBtn" class="link-btn" disabled>Add Link to Article</button>
+        <button id="removeLinksBtn" class="link-btn" disabled>Remove All Links</button>
+        
+        <div class="result-box">
+            <h3>Article with Links:</h3>
+            <div id="linkedArticle"></div>
+        </div>
+        
+        <div class="action-buttons">
+            <button id="copyLinkedArticleBtn" class="copy-btn" disabled>Copy Article with Links</button>
+            <button id="downloadLinkedArticleBtn" class="download-btn" disabled>Download Article with Links</button>
+        </div>
+    </div>
+
     <script>
         // DOM Elements
         const apiKeyInput = document.getElementById('apiKey');
@@ -246,11 +325,21 @@
         const copyArticleBtn = document.getElementById('copyArticleBtn');
         const downloadArticleBtn = document.getElementById('downloadArticleBtn');
         const wordCountDisplay = document.getElementById('wordCountDisplay');
+        const anchorTextInput = document.getElementById('anchorText');
+        const targetUrlInput = document.getElementById('targetUrl');
+        const linkPreview = document.getElementById('linkPreview');
+        const addLinkBtn = document.getElementById('addLinkBtn');
+        const removeLinksBtn = document.getElementById('removeLinksBtn');
+        const linkedArticleDiv = document.getElementById('linkedArticle');
+        const copyLinkedArticleBtn = document.getElementById('copyLinkedArticleBtn');
+        const downloadLinkedArticleBtn = document.getElementById('downloadLinkedArticleBtn');
         
         // State
         let apiKey = '';
         let isApiConnected = false;
         let currentOutline = '';
+        let currentArticle = '';
+        let addedLinks = [];
         
         // Event Listeners
         testApiBtn.addEventListener('click', testApiConnection);
@@ -261,6 +350,12 @@
         generateArticleBtn.addEventListener('click', generateArticle);
         copyArticleBtn.addEventListener('click', () => copyToClipboard(articleContent.innerText, 'Article'));
         downloadArticleBtn.addEventListener('click', () => downloadText(articleTitle.value + '\n\n' + articleContent.innerText, 'article.txt'));
+        anchorTextInput.addEventListener('input', updateLinkPreview);
+        targetUrlInput.addEventListener('input', updateLinkPreview);
+        addLinkBtn.addEventListener('click', addLinkToArticle);
+        removeLinksBtn.addEventListener('click', removeAllLinks);
+        copyLinkedArticleBtn.addEventListener('click', () => copyToClipboard(linkedArticleDiv.innerHTML, 'Article with Links'));
+        downloadLinkedArticleBtn.addEventListener('click', () => downloadText(articleTitle.value + '\n\n' + linkedArticleDiv.innerText, 'article-with-links.txt'));
         
         // API Connection Test
         async function testApiConnection() {
@@ -487,11 +582,17 @@
                 - Write in complete, well-structured sentences`;
                 
                 const response = await callOpenAI(prompt, 0.5); // Lower temperature for more focused writing
+                currentArticle = response;
                 displayArticleContent(response);
                 
                 // Enable export buttons
                 copyArticleBtn.disabled = false;
                 downloadArticleBtn.disabled = false;
+                addLinkBtn.disabled = false;
+                removeLinksBtn.disabled = false;
+                
+                // Initialize linked article with the generated content
+                linkedArticleDiv.innerHTML = response;
             } catch (error) {
                 articleContent.innerHTML = `<p class="error">Error generating article: ${error.message}</p>`;
             } finally {
@@ -510,6 +611,134 @@
             const text = articleContent.innerText;
             const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
             wordCountDisplay.textContent = wordCount;
+        }
+        
+        // Update Link Preview
+        function updateLinkPreview() {
+            const anchorText = anchorTextInput.value.trim();
+            const targetUrl = targetUrlInput.value.trim();
+            
+            if (anchorText && targetUrl) {
+                linkPreview.innerHTML = `Link preview: <a href="${targetUrl}" target="_blank">${anchorText}</a>`;
+                addLinkBtn.disabled = false;
+            } else {
+                linkPreview.textContent = 'Link preview will appear here';
+                addLinkBtn.disabled = true;
+            }
+        }
+        
+        // Add Link to Article
+        function addLinkToArticle() {
+            const anchorText = anchorTextInput.value.trim();
+            const targetUrl = targetUrlInput.value.trim();
+            const position = document.querySelector('input[name="linkPosition"]:checked').value;
+            
+            if (!anchorText || !targetUrl) {
+                alert('Please enter both anchor text and target URL');
+                return;
+            }
+            
+            if (!currentArticle) {
+                alert('Please generate an article first');
+                return;
+            }
+            
+            // Get the current article HTML
+            let articleHtml = linkedArticleDiv.innerHTML;
+            
+            // Split into paragraphs (handling both <p> tags and double line breaks)
+            const paragraphs = articleHtml.split(/<\/p>|\n\n/).filter(p => p.trim().length > 0);
+            
+            if (paragraphs.length === 0) {
+                alert('No paragraphs found in the article');
+                return;
+            }
+            
+            // Determine which paragraph to modify based on position
+            let targetParagraphIndex = 0;
+            switch (position) {
+                case 'second':
+                    targetParagraphIndex = Math.min(1, paragraphs.length - 1);
+                    break;
+                case 'third':
+                    targetParagraphIndex = Math.min(2, paragraphs.length - 1);
+                    break;
+                case 'last':
+                    targetParagraphIndex = paragraphs.length - 1;
+                    break;
+                case 'random':
+                    targetParagraphIndex = Math.floor(Math.random() * paragraphs.length);
+                    break;
+                default: // first
+                    targetParagraphIndex = 0;
+            }
+            
+            // Get the target paragraph
+            let targetParagraph = paragraphs[targetParagraphIndex];
+            
+            // Clean up paragraph (remove any remaining <p> tags)
+            targetParagraph = targetParagraph.replace(/<p[^>]*>|<\/p>/g, '');
+            
+            // Find a good place to insert the link (preferably near a relevant keyword)
+            const words = targetParagraph.split(/\s+/);
+            let insertionPoint = Math.floor(words.length / 2); // default to middle
+            
+            // Try to find a relevant word to place the link near
+            const relevantWords = words.map((word, index) => {
+                const cleanWord = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                const anchorLower = anchorText.toLowerCase();
+                return anchorLower.includes(cleanWord) || cleanWord.includes(anchorLower) ? index : -1;
+            }).filter(index => index !== -1);
+            
+            if (relevantWords.length > 0) {
+                insertionPoint = relevantWords[0];
+            }
+            
+            // Insert the anchor link
+            words.splice(insertionPoint, 0, `<a href="${targetUrl}" target="_blank">${anchorText}</a>`);
+            
+            // Rebuild the paragraph
+            const newParagraph = `<p>${words.join(' ')}</p>`;
+            paragraphs[targetParagraphIndex] = newParagraph;
+            
+            // Rebuild the article HTML
+            articleHtml = paragraphs.join('\n\n');
+            
+            // Update the linked article display
+            linkedArticleDiv.innerHTML = articleHtml;
+            
+            // Store the added link
+            addedLinks.push({
+                anchorText,
+                targetUrl,
+                position,
+                paragraphIndex: targetParagraphIndex
+            });
+            
+            // Enable export buttons
+            copyLinkedArticleBtn.disabled = false;
+            downloadLinkedArticleBtn.disabled = false;
+            
+            // Show success message
+            alert(`Link added to ${position} paragraph!`);
+        }
+        
+        // Remove All Links
+        function removeAllLinks() {
+            if (!addedLinks.length) {
+                alert('No links to remove');
+                return;
+            }
+            
+            // Reset to original article
+            linkedArticleDiv.innerHTML = currentArticle;
+            addedLinks = [];
+            
+            // Disable export buttons
+            copyLinkedArticleBtn.disabled = true;
+            downloadLinkedArticleBtn.disabled = true;
+            
+            alert('All links removed from article');
         }
         
         // Generic OpenAI API Call
