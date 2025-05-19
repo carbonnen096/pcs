@@ -97,16 +97,39 @@
         }
         .action-buttons button {
             margin-right: 10px;
+        }
+        .copy-btn {
+            background-color: #9b59b6;
+        }
+        .copy-btn:hover {
+            background-color: #8e44ad;
+        }
+        .download-btn {
             background-color: #2ecc71;
         }
-        .action-buttons button:hover {
+        .download-btn:hover {
             background-color: #27ae60;
+        }
+        .generate-btn {
+            background-color: #3498db;
+        }
+        .generate-btn:hover {
+            background-color: #2980b9;
+        }
+        #articleContent {
+            white-space: pre-wrap;
+        }
+        .word-count {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            text-align: right;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <h1>AI Content Generator</h1>
-    <p>Generate article titles and outlines using OpenAI API</p>
+    <p>Generate complete articles from titles and outlines using OpenAI API</p>
 
     <div class="container">
         <h2>1. OpenAI API Key Setup</h2>
@@ -165,13 +188,42 @@
             <h3>Article Outline:</h3>
             <div id="articleOutline"></div>
         </div>
+        
+        <div class="action-buttons">
+            <button id="copyOutlineBtn" class="copy-btn" disabled>Copy Outline</button>
+            <button id="downloadOutlineBtn" class="download-btn" disabled>Download Outline</button>
+        </div>
     </div>
 
     <div class="container">
-        <h2>4. Export Options</h2>
+        <h2>4. Article Generation</h2>
+        <div class="checkbox-group">
+            <label>
+                Target Word Count:
+                <input type="number" id="wordCount" value="1000" min="300" max="5000">
+            </label>
+            <label>
+                Writing Style:
+                <select id="writingStyle">
+                    <option value="informative">Informative</option>
+                    <option value="conversational">Conversational</option>
+                    <option value="professional">Professional</option>
+                    <option value="academic">Academic</option>
+                </select>
+            </label>
+        </div>
+        
+        <button id="generateArticleBtn" class="generate-btn" disabled>Generate Full Article</button>
+        
+        <div class="result-box">
+            <h3>Generated Article:</h3>
+            <div id="articleContent"></div>
+            <div class="word-count">Word count: <span id="wordCountDisplay">0</span></div>
+        </div>
+        
         <div class="action-buttons">
-            <button id="copyOutlineBtn" disabled>Copy Outline to Clipboard</button>
-            <button id="downloadTxtBtn" disabled>Download as .TXT</button>
+            <button id="copyArticleBtn" class="copy-btn" disabled>Copy Article</button>
+            <button id="downloadArticleBtn" class="download-btn" disabled>Download Article</button>
         </div>
     </div>
 
@@ -187,18 +239,28 @@
         const generateOutlineBtn = document.getElementById('generateOutlineBtn');
         const articleOutline = document.getElementById('articleOutline');
         const copyOutlineBtn = document.getElementById('copyOutlineBtn');
-        const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+        const downloadOutlineBtn = document.getElementById('downloadOutlineBtn');
+        const wordCountInput = document.getElementById('wordCount');
+        const generateArticleBtn = document.getElementById('generateArticleBtn');
+        const articleContent = document.getElementById('articleContent');
+        const copyArticleBtn = document.getElementById('copyArticleBtn');
+        const downloadArticleBtn = document.getElementById('downloadArticleBtn');
+        const wordCountDisplay = document.getElementById('wordCountDisplay');
         
         // State
         let apiKey = '';
         let isApiConnected = false;
+        let currentOutline = '';
         
         // Event Listeners
         testApiBtn.addEventListener('click', testApiConnection);
         generateTitlesBtn.addEventListener('click', generateTitles);
         generateOutlineBtn.addEventListener('click', generateOutline);
-        copyOutlineBtn.addEventListener('click', copyOutlineToClipboard);
-        downloadTxtBtn.addEventListener('click', downloadOutlineAsTxt);
+        copyOutlineBtn.addEventListener('click', () => copyToClipboard(articleOutline.innerText, 'Outline'));
+        downloadOutlineBtn.addEventListener('click', () => downloadText(articleTitle.value + '\n\n' + articleOutline.innerText, 'outline.txt'));
+        generateArticleBtn.addEventListener('click', generateArticle);
+        copyArticleBtn.addEventListener('click', () => copyToClipboard(articleContent.innerText, 'Article'));
+        downloadArticleBtn.addEventListener('click', () => downloadText(articleTitle.value + '\n\n' + articleContent.innerText, 'article.txt'));
         
         // API Connection Test
         async function testApiConnection() {
@@ -331,11 +393,13 @@
                 prompt += `Format the outline with clear headings (I., II., etc.) and bullet points for sub-sections.`;
                 
                 const response = await callOpenAI(prompt);
+                currentOutline = response;
                 displayArticleOutline(response);
                 
                 // Enable export buttons
                 copyOutlineBtn.disabled = false;
-                downloadTxtBtn.disabled = false;
+                downloadOutlineBtn.disabled = false;
+                generateArticleBtn.disabled = false;
             } catch (error) {
                 articleOutline.innerHTML = `<p class="error">Error generating outline: ${error.message}</p>`;
             } finally {
@@ -390,34 +454,66 @@
             return html;
         }
         
-        // Copy Outline to Clipboard
-        async function copyOutlineToClipboard() {
-            const text = articleOutline.innerText;
+        // Generate Full Article
+        async function generateArticle() {
+            const title = articleTitle.value.trim();
+            if (!title) {
+                alert('Please generate a title first');
+                return;
+            }
+            
+            if (!currentOutline) {
+                alert('Please generate an outline first');
+                return;
+            }
+            
+            const wordCount = wordCountInput.value;
+            const writingStyle = document.getElementById('writingStyle').value;
+            
+            generateArticleBtn.disabled = true;
+            articleContent.innerHTML = '<p>Generating article... This may take several minutes.</p>';
+            
             try {
-                await navigator.clipboard.writeText(text);
-                alert('Outline copied to clipboard!');
+                const prompt = `Write a complete article based on the following title and outline.\n\n
+                Title: ${title}\n\n
+                Outline:\n${currentOutline}\n\n
+                Requirements:
+                - Word count: approximately ${wordCount} words
+                - Writing style: ${writingStyle}
+                - Include all sections from the outline
+                - Add transitions between sections
+                - Use proper formatting with paragraphs and headings
+                - Include examples where appropriate
+                - Write in complete, well-structured sentences`;
+                
+                const response = await callOpenAI(prompt, 0.5); // Lower temperature for more focused writing
+                displayArticleContent(response);
+                
+                // Enable export buttons
+                copyArticleBtn.disabled = false;
+                downloadArticleBtn.disabled = false;
             } catch (error) {
-                alert('Failed to copy outline: ' + error.message);
+                articleContent.innerHTML = `<p class="error">Error generating article: ${error.message}</p>`;
+            } finally {
+                generateArticleBtn.disabled = false;
             }
         }
         
-        // Download Outline as TXT
-        function downloadOutlineAsTxt() {
-            const text = articleTitle.value + '\n\n' + articleOutline.innerText;
-            const blob = new Blob([text], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'article-outline.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        // Display Article Content
+        function displayArticleContent(text) {
+            articleContent.innerHTML = text;
+            updateWordCount();
+        }
+        
+        // Update Word Count Display
+        function updateWordCount() {
+            const text = articleContent.innerText;
+            const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+            wordCountDisplay.textContent = wordCount;
         }
         
         // Generic OpenAI API Call
-        async function callOpenAI(prompt) {
+        async function callOpenAI(prompt, temperature = 0.7) {
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -427,7 +523,7 @@
                 body: JSON.stringify({
                     model: 'gpt-3.5-turbo',
                     messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.7
+                    temperature: temperature
                 })
             });
             
@@ -438,6 +534,30 @@
             
             const data = await response.json();
             return data.choices[0]?.message?.content || '';
+        }
+        
+        // Copy to Clipboard
+        async function copyToClipboard(text, type) {
+            try {
+                await navigator.clipboard.writeText(text);
+                alert(`${type} copied to clipboard!`);
+            } catch (error) {
+                alert(`Failed to copy ${type.toLowerCase()}: ${error.message}`);
+            }
+        }
+        
+        // Download Text
+        function downloadText(text, filename) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
